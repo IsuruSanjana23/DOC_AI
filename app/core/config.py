@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,7 +24,7 @@ class Settings(BaseSettings):
     embedding_batch_size: int = 32
     embedding_device: str = "cpu"
 
-    llm_api_key: str = ""
+    llm_api_key: str = Field(default="", validation_alias="LITELLM_API_KEY")
     llm_base_url: str = "https://lite-llm.datafabdevelopment.com/v1"
     llm_model: str = "deepseek-v4-flash"
     llm_timeout_seconds: int = 60
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
         env_file=".env",
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
 

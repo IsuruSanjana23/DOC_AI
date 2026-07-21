@@ -9,4 +9,4 @@ import os
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
 os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://user:pass@localhost/test")
-os.environ.setdefault("LLM_API_KEY", "sk-test-key-for-unit-tests")
+os.environ.setdefault("LITELLM_API_KEY", "sk-test-key-for-unit-tests")
