@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import uuid4
 
@@ -39,3 +41,8 @@ class Collection(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="collections")
+
+    documents: Mapped[list["Document"]] = relationship(
+        back_populates="collection",
+        cascade="all, delete-orphan",
+    )
