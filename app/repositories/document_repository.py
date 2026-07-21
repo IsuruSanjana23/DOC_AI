@@ -49,6 +49,20 @@ class DocumentRepository:
         self.db.refresh(document)
         return document
 
+    def get_all_by_status(self, status: DocumentStatus) -> list[Document]:
+        stmt = (
+            select(Document)
+            .where(Document.status == status.value)
+            .order_by(Document.created_at.asc())
+        )
+        return list(self.db.scalars(stmt).all())
+
+    def save_text_content(self, document: Document, text: str) -> Document:
+        document.text_content = text
+        self.db.flush()
+        self.db.refresh(document)
+        return document
+
     def delete(self, document: Document) -> None:
         self.db.delete(document)
         self.db.flush()

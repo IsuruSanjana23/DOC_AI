@@ -20,3 +20,7 @@ class InvalidFileTypeException(Exception):
 
 class FileTooLargeException(Exception):
     pass
+
+class ExtractionError(Exception):
+    """Raised when PDF extraction fails."""
+    pass

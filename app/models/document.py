@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,6 +41,8 @@ class Document(Base):
         String(20),
         default=DocumentStatus.UPLOADED.value,
     )
+
+    text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     collection_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
