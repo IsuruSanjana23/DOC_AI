@@ -8,10 +8,12 @@ from app.schemas.auth import UserResponse
 from app.schemas.document import DocumentResponse
 from app.services.document_service import DocumentService
 from app.services.exceptions import (
+    ExtractionError,
     FileTooLargeException,
     InvalidFileTypeException,
     NotFoundException,
 )
+from app.services.processing_service import ProcessingService
 
 router = APIRouter(tags=["Documents"])
 
@@ -29,11 +31,19 @@ def upload_document(
 ):
     service = DocumentService(db)
     try:
-        return service.upload(
+        doc = service.upload(
             file=file,
             collection_id=collection_id,
             user_id=UUID(current_user.id),
         )
+
+        processing = ProcessingService(db)
+        try:
+            processing.process_document(UUID(doc.id))
+        except ExtractionError:
+            pass
+
+        return doc
     except InvalidFileTypeException:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,

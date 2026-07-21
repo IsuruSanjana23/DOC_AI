@@ -24,6 +24,7 @@ def upgrade() -> None:
     
     op.drop_column('users', 'id')
     op.add_column('users', sa.Column('id', sa.UUID(), nullable=False))
+    op.create_primary_key('pk_users', 'users', ['id'])
     
     op.add_column('users', sa.Column('password_hash', sa.String(length=255), nullable=False))
     op.add_column('users', sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))

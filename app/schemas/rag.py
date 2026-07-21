@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ChatRequest(BaseModel):
     query: str
+    collection_id: str | None = None
     top_k: int = 5
     min_score: float | None = None
 

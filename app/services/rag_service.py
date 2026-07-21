@@ -50,18 +50,20 @@ class RAGService:
         query: str,
         top_k: int = 5,
         min_score: float | None = None,
+        collection_id: str | None = None,
     ) -> RAGResponse:
         logger.info(
-            "RAG pipeline — query_length=%d top_k=%d min_score=%s",
+            "RAG pipeline — query_length=%d top_k=%d min_score=%s collection_id=%s",
             len(query),
             top_k,
             min_score,
+            collection_id,
         )
 
         # 1. Retrieve relevant chunks
         try:
             results: list[SearchResult] = self._retriever.retrieve(
-                query, top_k=top_k
+                query, top_k=top_k, collection_id=collection_id
             )
         except RetrieverError as e:
             logger.warning("Retrieval failed: %s", e)

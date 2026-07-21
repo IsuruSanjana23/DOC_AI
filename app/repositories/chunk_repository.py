@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.chunk import DocumentChunk
+from app.models.document import Document
 from app.rag.embedder import EmbeddedChunk
 
 
@@ -67,13 +68,18 @@ class ChunkRepository:
         query_vector: list[float],
         top_k: int = 5,
         min_score: float | None = None,
+        collection_id: UUID | None = None,
     ) -> list[SearchResult]:
         distance_col = DocumentChunk.embedding.cosine_distance(query_vector)
         stmt = (
             select(DocumentChunk, distance_col.label("distance"))
+            .join(Document, DocumentChunk.document_id == Document.id)
             .order_by(distance_col)
             .limit(top_k)
         )
+        if collection_id is not None:
+            stmt = stmt.where(Document.collection_id == collection_id)
+
         rows = self.db.execute(stmt).all()
         results = []
         for chunk, distance in rows:

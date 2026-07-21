@@ -30,7 +30,12 @@ class Retriever:
         self._top_k = top_k
         self._min_score = min_score
 
-    def retrieve(self, query: str, top_k: int | None = None) -> list[SearchResult]:
+    def retrieve(
+        self,
+        query: str,
+        top_k: int | None = None,
+        collection_id: str | None = None,
+    ) -> list[SearchResult]:
         effective_top_k = top_k or self._top_k
         query_length = len(query)
         logger.debug(
@@ -63,10 +68,13 @@ class Retriever:
         logger.debug("Embedding succeeded — vector dimension=%d", len(query_vector))
 
         try:
+            from uuid import UUID
+            cid = UUID(collection_id) if collection_id else None
             results = self._repository.search_similar(
                 query_vector,
                 top_k=effective_top_k,
                 min_score=self._min_score,
+                collection_id=cid,
             )
         except Exception as e:
             logger.exception(

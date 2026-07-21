@@ -71,6 +71,7 @@ async def chat(
             query=request.query,
             top_k=request.top_k,
             min_score=request.min_score,
+            collection_id=request.collection_id,
         )
     except RAGServiceError as e:
         logger.exception("RAG pipeline failed for query=%s", request.query)
