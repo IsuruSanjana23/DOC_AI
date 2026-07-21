@@ -10,6 +10,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
+if False:
+    from app.models.chunk import DocumentChunk
+
 
 class DocumentStatus(str, PyEnum):
     UPLOADED = "UPLOADED"
@@ -62,3 +65,8 @@ class Document(Base):
     )
 
     collection: Mapped[Collection] = relationship(back_populates="documents")
+
+    chunks: Mapped[list[DocumentChunk]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
