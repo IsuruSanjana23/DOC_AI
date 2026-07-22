@@ -94,6 +94,7 @@ def update_collection(
             user_id=UUID(current_user.id),
             name=body.name,
             description=body.description,
+            starred=body.starred,
         )
     except NotFoundException:
         raise HTTPException(

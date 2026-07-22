@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.collection import Collection
+from app.models.document import Document
 
 
 class CollectionRepository:
@@ -31,16 +32,23 @@ class CollectionRepository:
         )
         return list(self.db.scalars(stmt).all())
 
+    def count_documents(self, collection_id: UUID) -> int:
+        stmt = select(func.count()).select_from(Document).where(Document.collection_id == collection_id)
+        return self.db.scalar(stmt) or 0
+
     def update(
         self,
         collection: Collection,
         name: str | None,
         description: str | None,
+        starred: bool | None = None,
     ) -> Collection:
         if name is not None:
             collection.name = name
         if description is not None:
             collection.description = description
+        if starred is not None:
+            collection.starred = starred
         self.db.flush()
         self.db.refresh(collection)
         return collection

@@ -33,6 +33,7 @@ class CollectionCreate(BaseModel):
 class CollectionUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
+    starred: bool | None = None
 
     @field_validator("name")
     @classmethod
@@ -63,6 +64,8 @@ class CollectionResponse(BaseModel):
     id: str
     name: str
     description: str | None
+    starred: bool
+    document_count: int
     created_at: datetime
     updated_at: datetime
 

@@ -1,21 +1,37 @@
+import logging
+import threading
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.auth import get_current_user, get_db
+from app.db.session import SessionLocal
 from app.schemas.auth import UserResponse
 from app.schemas.document import DocumentResponse
 from app.services.document_service import DocumentService
 from app.services.exceptions import (
-    ExtractionError,
     FileTooLargeException,
     InvalidFileTypeException,
     NotFoundException,
 )
 from app.services.processing_service import ProcessingService
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Documents"])
+
+
+def process_document_background(document_id: str) -> None:
+    logger.info("Background processing started for document %s", document_id)
+    db = SessionLocal()
+    try:
+        service = ProcessingService(db)
+        service.process_document(UUID(document_id))
+        logger.info("Background processing completed for document %s", document_id)
+    except Exception as e:
+        logger.error("Background processing failed for document %s: %s", document_id, e, exc_info=True)
+    finally:
+        db.close()
 
 
 @router.post(
@@ -37,11 +53,12 @@ def upload_document(
             user_id=UUID(current_user.id),
         )
 
-        processing = ProcessingService(db)
-        try:
-            processing.process_document(UUID(doc.id))
-        except ExtractionError:
-            pass
+        logger.info("Spawning background processing for document %s", doc.id)
+        threading.Thread(
+            target=process_document_background,
+            args=(doc.id,),
+            daemon=True,
+        ).start()
 
         return doc
     except InvalidFileTypeException:

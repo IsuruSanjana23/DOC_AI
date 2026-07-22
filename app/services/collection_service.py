@@ -2,6 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.models.collection import Collection
 from app.repositories.collection_repository import CollectionRepository
 from app.schemas.collection import CollectionResponse
 from app.services.exceptions import (
@@ -13,6 +14,17 @@ from app.services.exceptions import (
 class CollectionService:
     def __init__(self, db: Session):
         self.repo = CollectionRepository(db)
+
+    def _to_response(self, collection: Collection) -> CollectionResponse:
+        return CollectionResponse(
+            id=str(collection.id),
+            name=collection.name,
+            description=collection.description,
+            starred=collection.starred,
+            document_count=self.repo.count_documents(collection.id),
+            created_at=collection.created_at,
+            updated_at=collection.updated_at,
+        )
 
     def create(
         self,
@@ -28,41 +40,20 @@ class CollectionService:
             description=description,
             user_id=user_id,
         )
-        return CollectionResponse(
-            id=str(collection.id),
-            name=collection.name,
-            description=collection.description,
-            created_at=collection.created_at,
-            updated_at=collection.updated_at,
-        )
+        return self._to_response(collection)
 
     def get_by_id(self, collection_id: UUID, user_id: UUID) -> CollectionResponse:
         collection = self.repo.get_by_id(collection_id)
         if not collection or collection.user_id != user_id:
             raise NotFoundException()
-        return CollectionResponse(
-            id=str(collection.id),
-            name=collection.name,
-            description=collection.description,
-            created_at=collection.created_at,
-            updated_at=collection.updated_at,
-        )
+        return self._to_response(collection)
 
     def get_all_by_user(
         self,
         user_id: UUID,
     ) -> list[CollectionResponse]:
         collections = self.repo.get_all_by_user(user_id)
-        return [
-            CollectionResponse(
-                id=str(c.id),
-                name=c.name,
-                description=c.description,
-                created_at=c.created_at,
-                updated_at=c.updated_at,
-            )
-            for c in collections
-        ]
+        return [self._to_response(c) for c in collections]
 
     def update(
         self,
@@ -70,6 +61,7 @@ class CollectionService:
         user_id: UUID,
         name: str | None,
         description: str | None,
+        starred: bool | None = None,
     ) -> CollectionResponse:
         collection = self.repo.get_by_id(collection_id)
         if not collection or collection.user_id != user_id:
@@ -86,14 +78,9 @@ class CollectionService:
             collection=collection,
             name=name,
             description=description,
+            starred=starred,
         )
-        return CollectionResponse(
-            id=str(collection.id),
-            name=collection.name,
-            description=collection.description,
-            created_at=collection.created_at,
-            updated_at=collection.updated_at,
-        )
+        return self._to_response(collection)
 
     def delete(self, collection_id: UUID, user_id: UUID) -> None:
         collection = self.repo.get_by_id(collection_id)

@@ -1,4 +1,5 @@
 import os
+import threading
 from pathlib import Path
 from uuid import UUID
 
@@ -15,6 +16,23 @@ from app.repositories.document_repository import DocumentRepository
 from app.services.exceptions import ExtractionError, NotFoundException
 
 
+_embedder: SentenceTransformerEmbedder | None = None
+_embedder_lock = threading.Lock()
+
+
+def _get_embedder() -> SentenceTransformerEmbedder:
+    global _embedder
+    if _embedder is None:
+        with _embedder_lock:
+            if _embedder is None:
+                _embedder = SentenceTransformerEmbedder(
+                    model_name=settings.embedding_model_name,
+                    batch_size=settings.embedding_batch_size,
+                    device=settings.embedding_device,
+                )
+    return _embedder
+
+
 class ProcessingService:
     def __init__(self, db: Session):
         self.db = db
@@ -26,11 +44,7 @@ class ProcessingService:
                 chunk_size=1000,
                 chunk_overlap=200,
             ),
-            embedder=SentenceTransformerEmbedder(
-                model_name=settings.embedding_model_name,
-                batch_size=settings.embedding_batch_size,
-                device=settings.embedding_device,
-            ),
+            embedder=_get_embedder(),
         )
 
     def process_document(self, document_id: UUID) -> list[EmbeddedChunk]:
