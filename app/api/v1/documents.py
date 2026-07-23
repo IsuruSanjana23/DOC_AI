@@ -53,6 +53,8 @@ def upload_document(
             user_id=UUID(current_user.id),
         )
 
+        db.commit()
+
         logger.info("Spawning background processing for document %s", doc.id)
         threading.Thread(
             target=process_document_background,
