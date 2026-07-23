@@ -122,6 +122,43 @@ def get_document(
         )
 
 
+@router.post(
+    "/documents/{document_id}/retry",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def retry_document(
+    document_id: UUID,
+    current_user: UserResponse = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = DocumentService(db)
+    try:
+        doc = service.get_by_id(
+            document_id=document_id,
+            user_id=UUID(current_user.id),
+        )
+    except NotFoundException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    if doc.status != "FAILED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Only FAILED documents can be retried (current status: {doc.status})",
+        )
+
+    logger.info("Spawning background retry for document %s", document_id)
+    threading.Thread(
+        target=process_document_background,
+        args=(str(document_id),),
+        daemon=True,
+    ).start()
+
+    return {"detail": "Retry initiated", "document_id": str(document_id)}
+
+
 @router.delete(
     "/documents/{document_id}",
     status_code=status.HTTP_204_NO_CONTENT,

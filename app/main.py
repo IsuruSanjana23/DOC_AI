@@ -1,3 +1,4 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -10,10 +11,29 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.rag import router as rag_router
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(settings.upload_dir, exist_ok=True)
+
+    from app.db.session import SessionLocal
+    from app.services.processing_service import ProcessingService
+
+    db = SessionLocal()
+    try:
+        service = ProcessingService(db)
+        processed = service.process_pending()
+        if processed:
+            logger.info("Processed %d pending documents on startup", len(processed))
+        else:
+            logger.debug("No pending documents to process on startup")
+    except Exception as e:
+        logger.error("Failed to process pending documents on startup: %s", e)
+    finally:
+        db.close()
+
     yield
 
 
@@ -25,7 +45,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

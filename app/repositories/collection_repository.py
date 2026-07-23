@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.models.collection import Collection
@@ -48,6 +48,14 @@ class CollectionRepository:
         if description is not None:
             collection.description = description
         if starred is not None:
+            if name is None and description is None:
+                self.db.execute(
+                    text("UPDATE collections SET starred = :starred WHERE id = :id"),
+                    {"starred": starred, "id": collection.id},
+                )
+                self.db.flush()
+                self.db.refresh(collection)
+                return collection
             collection.starred = starred
         self.db.flush()
         self.db.refresh(collection)

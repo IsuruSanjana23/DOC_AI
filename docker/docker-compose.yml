@@ -1,23 +1,43 @@
-version: "3.9"
-
 services:
   postgres:
     image: pgvector/pgvector:pg17
-
     container_name: doccollection-postgres
-
     restart: unless-stopped
-
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: doccollection
-
     ports:
       - "5433:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: doccollection-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/doccollection
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      LITELLM_API_KEY: ${LITELLM_API_KEY:-}
+      APP_NAME: DocCollection AI
+      DEBUG: "false"
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
 
 volumes:
   postgres_data:
+  uploads:

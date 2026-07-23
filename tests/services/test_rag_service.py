@@ -132,7 +132,7 @@ class TestAnswer:
         await service.answer("What is DI?", top_k=7, min_score=0.3)
 
         retriever.retrieve.assert_called_once_with(
-            "What is DI?", top_k=7
+            "What is DI?", top_k=7, collection_id=None
         )
 
     @pytest.mark.asyncio
@@ -246,7 +246,7 @@ class TestAnswer:
 
         await service.answer("test query")
 
-        retriever.retrieve.assert_called_once_with("test query", top_k=5)
+        retriever.retrieve.assert_called_once_with("test query", top_k=5, collection_id=None)
 
     @pytest.mark.asyncio
     async def test_source_text_preview_limited_to_200_chars(self):
